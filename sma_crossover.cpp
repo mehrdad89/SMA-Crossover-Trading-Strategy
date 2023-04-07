@@ -1,34 +1,24 @@
 #include <iostream>
 #include <vector>
-#include <stdexcept>
 
 using namespace std;
 
-// Function to calculate the Simple Moving Average (SMA) using the sliding window method
-void calculateSMA(const vector<double>& data, int length, vector<double>& sma) {
-    if (length <= 0 || length > data.size()) {
-        throw invalid_argument("Invalid SMA length");
-    }
+// Function to calculate the Simple Moving Average (SMA)
+double calculateSMA(const vector<double>& data, const vector<double>::const_iterator& start, const vector<double>::const_iterator& end) {
     double sum = 0.0;
-    for (int i = 0; i < length; i++) {
-        sum += data[i];
+    for (auto it = start; it != end; ++it) {
+        sum += *it;
     }
-    sma.push_back(sum / length);
-    for (int i = length; i < data.size(); i++) {
-        sum += data[i] - data[i - length];
-        sma.push_back(sum / length);
-    }
+    return sum / distance(start, end);
 }
 
 // Function to generate trading signals based on SMA crossover
 int generateSignal(const vector<double>& shortTermMA, const vector<double>& longTermMA) {
-    if (shortTermMA.empty() || longTermMA.empty()) {
-        throw invalid_argument("Empty MA vector");
-    }
     double currentShortTermMA = shortTermMA.back();
     double currentLongTermMA = longTermMA.back();
     double previousShortTermMA = shortTermMA[shortTermMA.size() - 2];
     double previousLongTermMA = longTermMA[longTermMA.size() - 2];
+
     if (currentShortTermMA > currentLongTermMA && previousShortTermMA <= previousLongTermMA) {
         return 1; // Buy signal
     } else if (currentShortTermMA < currentLongTermMA && previousShortTermMA >= previousLongTermMA) {
@@ -44,9 +34,14 @@ int main() {
     int longTermMALength = 5;
 
     // Calculate the short-term and long-term moving averages
-    vector<double> shortTermMA, longTermMA;
-    calculateSMA(stockPrices, shortTermMALength, shortTermMA);
-    calculateSMA(stockPrices, longTermMALength, longTermMA);
+    vector<double> shortTermMA;
+    vector<double> longTermMA;
+    for (auto it = stockPrices.begin() + shortTermMALength - 1; it != stockPrices.end(); ++it) {
+        shortTermMA.push_back(calculateSMA(stockPrices, it - shortTermMALength + 1, it + 1));
+    }
+    for (auto it = stockPrices.begin() + longTermMALength - 1; it != stockPrices.end(); ++it) {
+        longTermMA.push_back(calculateSMA(stockPrices, it - longTermMALength + 1, it + 1));
+    }
 
     // Generate trading signals based on SMA crossover
     int signal = generateSignal(shortTermMA, longTermMA);
