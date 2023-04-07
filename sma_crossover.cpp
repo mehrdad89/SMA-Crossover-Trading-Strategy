@@ -4,12 +4,17 @@
 using namespace std;
 
 // Function to calculate the Simple Moving Average (SMA)
-double calculateSMA(const vector<double>& data, const vector<double>::const_iterator& start, const vector<double>::const_iterator& end) {
+double calculateSMA(const vector<double>& data, int length) {
     double sum = 0.0;
-    for (auto it = start; it != end; ++it) {
-        sum += *it;
+    for (int i = 0; i < length; i++) {
+        sum += data[i];
     }
-    return sum / distance(start, end);
+    double sma = sum / length;
+    for (int i = length; i < data.size(); i++) {
+        sum += data[i] - data[i - length];
+        sma = sum / length;
+    }
+    return sma;
 }
 
 // Function to generate trading signals based on SMA crossover
@@ -33,14 +38,26 @@ int main() {
     int shortTermMALength = 3;
     int longTermMALength = 5;
 
+    if (stockPrices.size() < longTermMALength) {
+        cerr << "Error: stockPrices vector is too short." << endl;
+        return 1;
+    }
+
     // Calculate the short-term and long-term moving averages
     vector<double> shortTermMA;
     vector<double> longTermMA;
-    for (auto it = stockPrices.begin() + shortTermMALength - 1; it != stockPrices.end(); ++it) {
-        shortTermMA.push_back(calculateSMA(stockPrices, it - shortTermMALength + 1, it + 1));
+    for (int i = shortTermMALength; i <= stockPrices.size(); i++) {
+        vector<double> shortTermPrices(stockPrices.begin() + i - shortTermMALength, stockPrices.begin() + i);
+        shortTermMA.push_back(calculateSMA(shortTermPrices, shortTermMALength));
     }
-    for (auto it = stockPrices.begin() + longTermMALength - 1; it != stockPrices.end(); ++it) {
-        longTermMA.push_back(calculateSMA(stockPrices, it - longTermMALength + 1, it + 1));
+    for (int i = longTermMALength; i <= stockPrices.size(); i++) {
+        vector<double> longTermPrices(stockPrices.begin() + i - longTermMALength, stockPrices.begin() + i);
+        longTermMA.push_back(calculateSMA(longTermPrices, longTermMALength));
+    }
+
+    if (shortTermMA.empty() || longTermMA.empty()) {
+        cerr << "Error: short-term or long-term moving averages could not be calculated." << endl;
+        return 1;
     }
 
     // Generate trading signals based on SMA crossover
@@ -54,4 +71,3 @@ int main() {
     }
 
     return 0;
-}
