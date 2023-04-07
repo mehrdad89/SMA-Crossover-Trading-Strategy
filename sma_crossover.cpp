@@ -44,20 +44,15 @@ int main() {
     }
 
     // Calculate the short-term and long-term moving averages
-    vector<double> shortTermMA;
-    vector<double> longTermMA;
-    for (int i = shortTermMALength; i <= stockPrices.size(); i++) {
-        vector<double> shortTermPrices(stockPrices.begin() + i - shortTermMALength, stockPrices.begin() + i);
-        shortTermMA.push_back(calculateSMA(shortTermPrices, shortTermMALength));
+    vector<double> shortTermMA(stockPrices.size() - shortTermMALength + 1);
+    vector<double> longTermMA(stockPrices.size() - longTermMALength + 1);
+    for (int i = 0; i < shortTermMA.size(); i++) {
+        vector<double> shortTermPrices(stockPrices.begin() + i, stockPrices.begin() + i + shortTermMALength);
+        shortTermMA[i] = calculateSMA(shortTermPrices, shortTermMALength);
     }
-    for (int i = longTermMALength; i <= stockPrices.size(); i++) {
-        vector<double> longTermPrices(stockPrices.begin() + i - longTermMALength, stockPrices.begin() + i);
-        longTermMA.push_back(calculateSMA(longTermPrices, longTermMALength));
-    }
-
-    if (shortTermMA.empty() || longTermMA.empty()) {
-        cerr << "Error: short-term or long-term moving averages could not be calculated." << endl;
-        return 1;
+    for (int i = 0; i < longTermMA.size(); i++) {
+        vector<double> longTermPrices(stockPrices.begin() + i, stockPrices.begin() + i + longTermMALength);
+        longTermMA[i] = calculateSMA(longTermPrices, longTermMALength);
     }
 
     // Generate trading signals based on SMA crossover
@@ -71,3 +66,5 @@ int main() {
     }
 
     return 0;
+}
+
