@@ -1,14 +1,10 @@
-
 #include <iostream>
 #include <vector>
+#include <numeric>
 
 // Function to calculate the Simple Moving Average (SMA)
 double calculateSMA(const std::vector<double>& data) {
-    double sum = 0.0;
-    for (const auto& value : data) {
-        sum += value;
-    }
-
+    double sum = std::accumulate(data.begin(), data.end(), 0.0);
     return sum / data.size();
 }
 
@@ -51,7 +47,7 @@ int main() {
     } else if (signal == -1) {
         std::cout << "Sell signal generated!" << std::endl;
     } else {
-        std::cout << "No signal generated." << endl;
+        std::cout << "No signal generated." << std::endl;
     }
     return 0;
 }
