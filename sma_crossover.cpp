@@ -1,28 +1,23 @@
+
 #include <iostream>
 #include <vector>
 
-using namespace std;
-
 // Function to calculate the Simple Moving Average (SMA)
-double calculateSMA(const vector<double>& data, int length) {
+double calculateSMA(const std::vector<double>& data) {
     double sum = 0.0;
-    for (int i = 0; i < length; i++) {
-        sum += data[i];
+    for (const auto& value : data) {
+        sum += value;
     }
-    double sma = sum / length;
-    for (int i = length; i < data.size(); i++) {
-        sum += data[i] - data[i - length];
-        sma = sum / length;
-    }
-    return sma;
+
+    return sum / data.size();
 }
 
 // Function to generate trading signals based on SMA crossover
-int generateSignal(const vector<double>& shortTermMA, const vector<double>& longTermMA) {
-    double currentShortTermMA = shortTermMA.back();
-    double currentLongTermMA = longTermMA.back();
-    double previousShortTermMA = shortTermMA[shortTermMA.size() - 2];
-    double previousLongTermMA = longTermMA[longTermMA.size() - 2];
+int generateSignal(const std::vector<double>& shortTermMA, const std::vector<double>& longTermMA) {
+    auto currentShortTermMA = shortTermMA.back();
+    auto currentLongTermMA = longTermMA.back();
+    auto previousShortTermMA = shortTermMA[shortTermMA.size() - 2];
+    auto previousLongTermMA = longTermMA[longTermMA.size() - 2];
 
     if (currentShortTermMA > currentLongTermMA && previousShortTermMA <= previousLongTermMA) {
         return 1; // Buy signal
@@ -34,37 +29,29 @@ int generateSignal(const vector<double>& shortTermMA, const vector<double>& long
 }
 
 int main() {
-    vector<double> stockPrices = { 100.0, 110.0, 120.0, 130.0, 140.0, 130.0, 120.0, 110.0, 100.0, 90.0 };
-    int shortTermMALength = 3;
-    int longTermMALength = 5;
-
-    if (stockPrices.size() < longTermMALength) {
-        cerr << "Error: stockPrices vector is too short." << endl;
-        return 1;
-    }
+    std::vector<double> stockPrices = { 100.0, 110.0, 120.0, 130.0, 140.0, 130.0, 120.0, 110.0, 100.0, 90.0 };
+    std::size_t shortTermMALength = 3;
+    std::size_t longTermMALength = 5;
 
     // Calculate the short-term and long-term moving averages
-    vector<double> shortTermMA(stockPrices.size() - shortTermMALength + 1);
-    vector<double> longTermMA(stockPrices.size() - longTermMALength + 1);
-    for (int i = 0; i < shortTermMA.size(); i++) {
-        vector<double> shortTermPrices(stockPrices.begin() + i, stockPrices.begin() + i + shortTermMALength);
-        shortTermMA[i] = calculateSMA(shortTermPrices, shortTermMALength);
-    }
-    for (int i = 0; i < longTermMA.size(); i++) {
-        vector<double> longTermPrices(stockPrices.begin() + i, stockPrices.begin() + i + longTermMALength);
-        longTermMA[i] = calculateSMA(longTermPrices, longTermMALength);
+    std::vector<double> shortTermMA;
+    std::vector<double> longTermMA;
+    std::size_t maxIndex = std::max(shortTermMALength, longTermMALength);
+    for (std::size_t i = maxIndex; i < stockPrices.size(); i++) {
+        std::vector<double> shortTermPrices(stockPrices.begin() + i - shortTermMALength, stockPrices.begin() + i);
+        std::vector<double> longTermPrices(stockPrices.begin() + i - longTermMALength, stockPrices.begin() + i);
+        shortTermMA.push_back(calculateSMA(shortTermPrices));
+        longTermMA.push_back(calculateSMA(longTermPrices));
     }
 
     // Generate trading signals based on SMA crossover
     int signal = generateSignal(shortTermMA, longTermMA);
     if (signal == 1) {
-        cout << "Buy signal generated!" << endl;
+        std::cout << "Buy signal generated!" << std::endl;
     } else if (signal == -1) {
-        cout << "Sell signal generated!" << endl;
+        std::cout << "Sell signal generated!" << std::endl;
     } else {
-        cout << "No signal generated." << endl;
+        std::cout << "No signal generated." << endl;
     }
-
     return 0;
 }
-
