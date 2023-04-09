@@ -2,30 +2,30 @@
 #include <vector>
 #include <numeric>
 
-constexpr std::size_t shortTermMALength = 3;
-constexpr std::size_t longTermMALength = 5;
-constexpr std::size_t signalPeriod = 3;
+constexpr std::size_t SHORT_TERM_MA_LENGTH = 3;
+constexpr std::size_t LONG_TERM_MA_LENGTH = 5;
+constexpr std::size_t SIGNAL_PERIOD = 3;
 constexpr std::size_t RSI_PERIOD = 14;
 constexpr double OVERBOUGHT_THRESHOLD = 75.0;
 constexpr double OVERSOLD_THRESHOLD = 25.0;
 
 // Function to calculate the Simple Moving Average (SMA)
 double calculateSMA(const std::vector<double>& data) {
-    double sum = std::accumulate(data.begin(), data.end(), 0.0);
+	double sum = std::accumulate(data.begin(), data.end(), 0);
     return sum / data.size();
 }
 // Function to calculate the RSI and MACD
-std::tuple<double, double> calculateRSIAndMACD(const std::vector<double>& data, const std::size_t rsiPeriod, const std::size_t shortTermPeriod, const std::size_t longTermPeriod, const std::size_t signalPeriod) {
+std::tuple<double, double> calculateRSIAndMACD(const std::vector<double>& data) {
     double sumGain = 0.0;
     double sumLoss = 0.0;
     double prevPrice = data.front();
     std::vector<double> shortTermEMA, longTermEMA, macd;
-    const double shortTermSmoothingFactor = 2.0 / (shortTermPeriod + 1);
-    const double longTermSmoothingFactor = 2.0 / (longTermPeriod + 1);
-    const double signalSmoothingFactor = 2.0 / (signalPeriod + 1);
+    const double shortTermSmoothingFactor = 2.0 / (SHORT_TERM_MA_LENGTH + 1);
+    const double longTermSmoothingFactor = 2.0 / (LONG_TERM_MA_LENGTH + 1);
+    const double signalSmoothingFactor = 2.0 / (SIGNAL_PERIOD + 1);
 
     // Calculate RSI and short-term EMA
-    for (std::size_t i = 1; i < rsiPeriod; i++) {
+    for (std::size_t i = 1; i < RSI_PERIOD; i++) {
         double diff = data[i] - prevPrice;
         if (diff > 0) {
             sumGain += diff;
@@ -35,8 +35,8 @@ std::tuple<double, double> calculateRSIAndMACD(const std::vector<double>& data, 
         prevPrice = data[i];
         shortTermEMA.emplace_back(data[i]);
     }
-    double avgGain = sumGain / rsiPeriod;
-    double avgLoss = sumLoss / rsiPeriod;
+    double avgGain = sumGain / RSI_PERIOD;
+    double avgLoss = sumLoss / RSI_PERIOD;
     double rs = avgGain / avgLoss;
     double rsi = 100 - (100 / (1 + rs));
 
@@ -46,7 +46,7 @@ std::tuple<double, double> calculateRSIAndMACD(const std::vector<double>& data, 
         double ema = (price - longTermEMA.back()) * longTermSmoothingFactor + longTermEMA.back();
         longTermEMA.emplace_back(ema);
 
-        if (shortTermEMA.size() == shortTermPeriod) {
+        if (shortTermEMA.size() == SHORT_TERM_MA_LENGTH) {
             shortTermEMA.erase(shortTermEMA.begin());
         }
         double ema2 = (price - shortTermEMA.back()) * shortTermSmoothingFactor + shortTermEMA.back();
@@ -58,11 +58,11 @@ std::tuple<double, double> calculateRSIAndMACD(const std::vector<double>& data, 
         if (shortTermEMA.size() == longTermEMA.size()) {
             macd.emplace_back(shortTermEMA.back() - longTermEMA.back());
         }
-        if (macd.size() == signalPeriod) {
+        if (macd.size() == SIGNAL_PERIOD) {
             macd.erase(macd.begin());
         }
-        if (macd.size() == signalPeriod - 1) {
-            double signal = std::accumulate(macd.begin(), macd.end(), 0.0) / signalPeriod;
+        if (macd.size() == SIGNAL_PERIOD - 1) {
+            double signal = std::accumulate(macd.begin(), macd.end(), 0.0) / SIGNAL_PERIOD;
             double currentMacd = macd.back();
             return std::make_tuple(rsi, currentMacd - signal);
         }
@@ -72,15 +72,14 @@ std::tuple<double, double> calculateRSIAndMACD(const std::vector<double>& data, 
 
 
 // Function to generate trading signals based on SMA and RSI
-int generateSignal(const std::vector<double>& stockPrices, const std::vector<double>& shortTermMA, const std::vector<double>& longTermMA, int rsiPeriod, double overboughtThreshold, double oversoldThreshold) {
+int generateSignal(const std::vector<double>& stockPrices, const std::vector<double>& shortTermMA, const std::vector<double>& longTermMA, int RSI_PERIOD, double overboughtThreshold, double oversoldThreshold) {
     auto currentShortTermMA = shortTermMA.back();
     auto currentLongTermMA = longTermMA.back();
     auto previousShortTermMA = shortTermMA[shortTermMA.size() - 2];
     auto previousLongTermMA = longTermMA[longTermMA.size() - 2];
 
-    std::vector<double> rsiPrices(stockPrices.end() - rsiPeriod, stockPrices.end());
-    //double rsi = calculateRSI(rsiPrices, rsiPeriod);
-    std::tuple<double, double> rsiAndMacd = calculateRSIAndMACD(rsiPrices, rsiPeriod, shortTermMALength, longTermMALength, signalPeriod);
+    std::vector<double> rsiPrices(stockPrices.end() - RSI_PERIOD, stockPrices.end());
+    std::tuple<double, double> rsiAndMacd = calculateRSIAndMACD(rsiPrices);
     double rsi = std::get<0>(rsiAndMacd);
     double macd = std::get<1>(rsiAndMacd);
 
@@ -99,10 +98,11 @@ int main() {
     // Calculate the short-term and long-term moving averages
     std::vector<double> shortTermMA;
     std::vector<double> longTermMA;
-    std::size_t maxIndex = std::max(shortTermMALength, longTermMALength);
+    std::size_t maxIndex = std::max(SHORT_TERM_MA_LENGTH, LONG_TERM_MA_LENGTH);
     for (std::size_t i = maxIndex; i < stockPrices.size(); i++) {
-        std::vector<double> shortTermPrices(stockPrices.begin() + i - shortTermMALength, stockPrices.begin() + i);
-        std::vector<double> longTermPrices(stockPrices.begin() + i - longTermMALength, stockPrices.begin() + i);
+		std::vector<double> shortTermPrices(stockPrices.begin() + i - SHORT_TERM_MA_LENGTH, stockPrices.begin() + i);
+		std::vector<double> longTermPrices(stockPrices.begin() + i - LONG_TERM_MA_LENGTH, stockPrices.begin() + i);
+
         shortTermMA.push_back(calculateSMA(shortTermPrices));
         longTermMA.push_back(calculateSMA(longTermPrices));
     }
