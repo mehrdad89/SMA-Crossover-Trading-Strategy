@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <numeric>
+#include <tuple>
 
 constexpr std::size_t SHORT_TERM_MA_LENGTH = 3;
 constexpr std::size_t LONG_TERM_MA_LENGTH = 5;
